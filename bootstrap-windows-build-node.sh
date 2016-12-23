@@ -22,11 +22,11 @@ do
 key="$1"
 
 case $key in
-    -host|--hostname)
+    --host|--hostname)
     WINDOWS_HOST="$2"
     shift # past argument
     ;;
-    -user|--username)
+    --user|--username)
     WINDOWS_USER="$2"
     shift # past argument
     ;;
@@ -49,7 +49,7 @@ done
 
 # Step 1, configure a chef/knife client
 
-mkdir .chef
+mkdir -p ~/.chef
 
 CHEF_SERVER=`grep chef_server /etc/delivery/delivery.rb  | awk '{print $3}'`
 CHEF_USERNAME=`grep chef_username /etc/delivery/delivery.rb  | awk '{print $3}'`
@@ -57,6 +57,7 @@ CHEF_USERNAME=`grep chef_username /etc/delivery/delivery.rb  | awk '{print $3}'`
 cat > .chef/knife.rb <<EOF
 node_name ${CHEF_USERNAME}
 chef_server_url ${CHEF_SERVER}
+ssl_verify_mode :verify_none
 client_key "/etc/delivery/delivery.pem"
 validation_key "/nonexist" # for validatorless bootstrapping
 EOF

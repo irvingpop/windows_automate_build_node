@@ -22,7 +22,7 @@ do
 key="$1"
 
 case $key in
-    -user|--username)
+    --user|--username)
     WINDOWS_USER="$2"
     shift # past argument
     ;;
@@ -65,6 +65,7 @@ CHEF_USERNAME=`grep chef_username /etc/delivery/delivery.rb  | awk '{print $3}'`
 cat > .chef/knife.rb <<EOF
 node_name ${CHEF_USERNAME}
 chef_server_url ${CHEF_SERVER}
+ssl_verify_mode :verify_none
 client_key "/etc/delivery/delivery.pem"
 validation_key "/nonexist" # for validatorless bootstrapping
 knife[:aws_credential_file] = File.join(ENV['HOME'], "/.aws/credentials")
