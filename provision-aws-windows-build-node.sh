@@ -7,10 +7,10 @@
 #         If in doubt, run https://gist.github.com/vinyar/6735863
 
 usage='
-bootstrap-windows-build-node.sh --host hostname_or_ip --username Administrator --password VerySecurePassword
+bootstrap-windows-build-node.sh --host hostname_or_ip --username Administrator --password VerySecurePassword --ssh-key mykey --subnet subnet-ff2f279b --security-group-id sg-be37dec6
 '
 
-if [ $# -lt 3 ]; then
+if [ $# -lt 5 ]; then
   echo -e $usage
   exit 1
 fi
@@ -22,16 +22,24 @@ do
 key="$1"
 
 case $key in
-    -host|--hostname)
-    WINDOWS_HOST="$2"
-    shift # past argument
-    ;;
     -user|--username)
     WINDOWS_USER="$2"
     shift # past argument
     ;;
     --password)
     WINDOWS_PASSWORD="$2"
+    shift # past argument
+    ;;
+    --ssh-key)
+    SSH_KEY="$2"
+    shift # past argument
+    ;;
+    --subnet)
+    SUBNET="$2"
+    shift # past argument
+    ;;
+    --security-group-id)
+    SECURITY_GROUP_ID="$2"
     shift # past argument
     ;;
     -h|--help)
@@ -49,7 +57,7 @@ done
 
 # Step 1, configure a chef/knife client
 
-mkdir .chef
+mkdir -p ~/.chef
 
 CHEF_SERVER=`grep chef_server /etc/delivery/delivery.rb  | awk '{print $3}'`
 CHEF_USERNAME=`grep chef_username /etc/delivery/delivery.rb  | awk '{print $3}'`
@@ -68,10 +76,6 @@ eval "$(chef shell-init bash)"
 chef gem install knife-windows
 
 # Step 2, bootstrap the windows node
-
-# Verify that `knife wsman` can work successfully before proceeding
-# If not, you need to run: https://gist.github.com/vinyar/6735863
-knife wsman test $WINDOWS_HOST -m
 
 # For now, use the community push jobs cookbook
 cat > ~/Berksfile <<EOF
@@ -108,16 +112,6 @@ cat > ~/wbn-json-attributes.json <<EOF
   }
 }
 EOF
-#
-# knife bootstrap windows winrm \
-# 	$WINDOWS_HOST \
-# 	--node-name windows-build-node-1 \
-# 	--winrm-user $WINDOWS_USER \
-# 	--winrm-password $WINDOWS_PASSWORD \
-# 	--msi-url $DOWNLOAD_URL \
-# 	--run-list 'recipe[windows_automate_build_node::default]' \
-# 	--json-attribute-file ~/wbn-json-attributes.json
-#
 
 knife ec2 server create \
   -N windows-build-node-2 \
@@ -125,11 +119,12 @@ knife ec2 server create \
   -f t2.medium \
   -x ".\\${WINDOWS_USER}" \
   -P ${WINDOWS_PASSWORD} \
-  --ssh-key your-public-key-id \
+  --ssh-key ${SSH_KEY} \
   --winrm-transport ssl \
   --winrm-ssl-verify-mode verify_none \
-  --security-group-ids your-security-groups \
+  --subnet ${SUBNET} \
+  --security-group-id ${SECURITY_GROUP_ID} \
  	--msi-url $DOWNLOAD_URL \
+  --no-node-verify-api-cert \
  	--run-list 'recipe[windows_automate_build_node::default]' \
  	--json-attribute-file ~/wbn-json-attributes.json
-  -VV

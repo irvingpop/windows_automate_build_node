@@ -105,10 +105,10 @@ cat > ~/wbn-json-attributes.json <<EOF
 EOF
 
 knife bootstrap windows winrm \
-	$WINDOWS_HOST \
-	--node-name windows-build-node-1 \
-	--winrm-user $WINDOWS_USER \
-	--winrm-password $WINDOWS_PASSWORD \
-	--msi-url $DOWNLOAD_URL \
-	--run-list 'recipe[windows_automate_build_node::default]' \
-	--json-attribute-file ~/wbn-json-attributes.json
+  $WINDOWS_HOST \
+  --node-name windows-build-node-1 \
+  --winrm-user $WINDOWS_USER \
+  --winrm-password $WINDOWS_PASSWORD \
+  --msi-url $DOWNLOAD_URL \
+  --run-list 'recipe[windows_automate_build_node::default]' \
+  --json-attribute-file ~/wbn-json-attributes.json
