@@ -68,7 +68,6 @@ ssl_verify_mode :verify_none
 client_key "/etc/delivery/delivery.pem"
 validation_key "/nonexist" # for validatorless bootstrapping
 knife[:aws_credential_file] = File.join(ENV['HOME'], "/.aws/credentials")
-#knife[:aws_config_file] = File.join(ENV['HOME'], "/.aws/credentials")
 knife[:region] = 'us-west-2'
 EOF
 
