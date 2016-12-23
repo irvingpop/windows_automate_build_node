@@ -116,12 +116,9 @@ cat > windows-build-node-user-data.txt <<EOF
   # needed for windows to manipulate centralized config files which live of a share. Such as AppFabric.
   winrm set winrm/config/service/auth '@{CredSSP="true"}';
 
-  write-host 'Attempting to enable built in 5985 firewall rule';
-  netsh advfirewall firewall set rule name="Windows Remote Management (HTTP-In)" profile=public protocol=tcp localport=5985 new remoteip=any;
-  write-host 'Adding custom firewall rule for 5985';
-  netsh advfirewall firewall add rule name="Opscode-Windows Remote Management (HTTP-In)" dir=in action=allow enable=yes profile=any protocol=tcp localport=5985 remoteip=any;;
-  write-host 'adding 80-84 ports for training';
-  netsh advfirewall firewall add rule name="Opscode-Windows IIS (HTTP-In)" dir=in action=allow enable=yes profile=any protocol=tcp localport=80-84 remoteip=any;
+  write-host 'Adding custom firewall rule for 5985 and 5986';
+  netsh advfirewall firewall add rule name="Windows Remote Management (HTTP-In)" dir=in action=allow enable=yes profile=any protocol=tcp localport=5985 remoteip=any;
+  netsh advfirewall firewall add rule name="WinRM HTTPS" protocol=TCP dir=in Localport=5986 remoteport=any action=allow localip=any remoteip=any profile=any enable=yes;
 
   # Setting up "Known" user for bootstrapping.
   write-host 'setting up secedit rule to disable complex passwords';
@@ -133,18 +130,17 @@ cat > windows-build-node-user-data.txt <<EOF
   write-host 'changing secedit policy';
   secedit /configure /db C:\Windows\security\new.sdb /cfg c:\delete.cfg /areas SECURITYPOLICY;
 
+  # TODO: probably need a better escaping system in the future
   write-host 'Setting up "Known" user for bootstrapping.';
-  $user="${WINDOWS_USER}";
-  $password = "${WINDOWS_PASSWORD}";
-  net user /add $user $password /yes;
+  net user /add ${WINDOWS_USER} ${WINDOWS_PASSWORD} /yes;
   write-host 'adding user to admins';
-  net localgroup Administrators /add $user;
+  net localgroup Administrators /add ${WINDOWS_USER};
 
-  write-host 'Adding ChefDK to the system path for future use';
-  $oldPath=( Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path
-  $newPath=$oldPath+';C:\opscode\chefdk\bin\'
-  Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH –Value $newPath
-
+  # write-host 'Adding ChefDK to the system path for future use';
+  # \$oldPath=( Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name PATH).Path
+  # \$newPath=\$oldPath+';C:\\opscode\\chefdk\\bin\\'
+  # Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name PATH –Value \$newPath
+  #
 </powershell>
 EOF
 
@@ -158,9 +154,11 @@ knife ec2 server create \
   --winrm-transport ssl \
   --winrm-ssl-verify-mode verify_none \
   --subnet ${SUBNET} \
+  --ebs-volume-type gp2 \
   --security-group-id ${SECURITY_GROUP_ID} \
- 	--msi-url $DOWNLOAD_URL \
+  --msi-url $DOWNLOAD_URL \
   --no-node-verify-api-cert \
- 	--run-list 'recipe[windows_automate_build_node::default]' \
- # 	--json-attribute-file ~/wbn-json-attributes.json
-  --user-data windows-build-node-user-data.txt
+  --run-list 'recipe[windows_automate_build_node::default]' \
+  --user-data windows-build-node-user-data.txt \
+  --bootstrap-template .chef/bootstrap-windows-chefdk-msi.erb
+# --json-attribute-file ~/wbn-json-attributes.json
