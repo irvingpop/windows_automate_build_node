@@ -136,11 +136,6 @@ cat > windows-build-node-user-data.txt <<EOF
   write-host 'adding user to admins';
   net localgroup Administrators /add ${WINDOWS_USER};
 
-  # write-host 'Adding ChefDK to the system path for future use';
-  # \$oldPath=( Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name PATH).Path
-  # \$newPath=\$oldPath+';C:\\opscode\\chefdk\\bin\\'
-  # Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name PATH –Value \$newPath
-  #
 </powershell>
 EOF
 
@@ -157,8 +152,6 @@ knife ec2 server create \
   --ebs-volume-type gp2 \
   --security-group-id ${SECURITY_GROUP_ID} \
   --msi-url $DOWNLOAD_URL \
-  --no-node-verify-api-cert \
   --run-list 'recipe[windows_automate_build_node::default]' \
   --user-data windows-build-node-user-data.txt \
   --bootstrap-template .chef/bootstrap-windows-chefdk-msi.erb
-# --json-attribute-file ~/wbn-json-attributes.json

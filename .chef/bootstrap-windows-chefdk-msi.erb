@@ -242,7 +242,9 @@ mkdir <%= bootstrap_directory %>\ohai\hints
  <%= first_boot %>
 )
 
-@echo Starting chef to bootstrap the node...
 SET PATH=%PATH%;C:\opscode\chefdk\bin;C:\opscode\chefdk\embedded\bin
-knife ssl fetch -c c:/chef/client.rb
-chef-client -c c:/chef/client.rb -j c:/chef/first-boot.json
+
+call knife ssl fetch -c c:/chef/client.rb
+call chef-client -c c:/chef/client.rb -j c:/chef/first-boot.json
+
+@echo Complete!
