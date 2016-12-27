@@ -3,12 +3,15 @@
 # https://github.com/martinemde/git-ssh-wrapper
 
 unset SSH_AUTH_SOCK
+
+#OUTPUT=$(chef exec ruby "c:/delivery/ws/bin/replace-quotes.rb" "$*")
+
 ssh -o CheckHostIP=no \
     -o IdentitiesOnly=yes \
     -o LogLevel=INFO \
     -o StrictHostKeyChecking=no \
     -o PasswordAuthentication=no \
-    -o UserKnownHostsFile=/var/opt/delivery/workspace/etc/delivery-git-ssh-known-hosts \
-    -o IdentityFile=/var/opt/delivery/workspace/etc/builder_key \
+    -o UserKnownHostsFile=c:/chef/workspace/etc/delivery-git-ssh-known-hosts \
+    -o IdentityFile=c:/chef/workspace/etc/builder_key \
     -l builder \
     $*

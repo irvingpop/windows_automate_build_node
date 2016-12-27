@@ -6,54 +6,59 @@
 
 workspace = 'c:/chef/workspace'
 
-#delivery_databag = data_bag_item('automate', 'automate')
+delivery_databag = data_bag_item('automate', 'automate')
 
 directory workspace do
   action :create
   recursive true
+  user 'chef'
 end
 
 %w(.chef bin lib etc).each do |dir|
-  directory ::File.join(workspace, dir)
+  directory ::File.join(workspace, dir) do
+    user 'chef'
+  end
 end
 
 %w(etc/builder_key .chef/builder_key).each do |builder_key|
   file ::File.join(workspace, builder_key) do
     content delivery_databag['builder_pem']
-    mode 0600
-    owner 'root'
-    group 'root'
+    user 'chef'
   end
 end
 
 %w(etc/delivery_key .chef/delivery_key etc/delivery.pem).each do |delivery_key|
   file ::File.join(workspace, delivery_key) do
     content delivery_databag['user_pem']
+    user 'chef'
   end
 end
 
 %w(etc/delivery.rb .chef/knife.rb).each do |knife_config|
-  cookbook_file "#{workspace}/#{knife_config}" do
+  cookbook_file ::File.join(workspace, knife_config) do
     source 'config.rb'
+    user 'chef'
   end
 end
 
 cookbook_file "#{workspace}/bin/git_ssh" do
   source 'git-ssh-wrapper'
+  user 'chef'
 end
 
 cookbook_file "#{workspace}/bin/delivery-cmd" do
   source 'delivery-cmd'
+  user 'chef'
 end
 
-
-%W(#{node['chef_server']['fqdn']} #{node['chef_automate']['fqdn']}).each do |server|
-  execute "fetch ssl cert for #{server}" do
-    command "knife ssl fetch -s https://#{server}"
-  end
-  execute "fetch ssl cert for #{server}" do
-    command "knife ssl fetch -s https://#{server} -c /etc/chef/client.rb"
-  end
+cookbook_file "#{workspace}/bin/delivery-cmd.bat" do
+  source 'delivery-cmd.bat'
+  user 'chef'
 end
 
-include_recipe 'chef-services::install_push_jobs'
+execute 'knife ssl fetch' do
+  command "knife ssl fetch -c #{workspace}/.chef/knife.rb"
+  action :run
+end
+
+include_recipe 'windows_automate_build_node::install_push_jobs'
