@@ -21,3 +21,4 @@ Berksfile.lock
 Policyfile.lock.json
 .chef/knife.rb
 windows-build-node-user-data.txt
+automate.json
