@@ -144,6 +144,7 @@ knife ec2 server create \
   -f t2.medium \
   -x ".\\${WINDOWS_USER}" \
   -P ${WINDOWS_PASSWORD} \
+  --tags windows-build-node \
   --ssh-key ${SSH_KEY} \
   --winrm-transport ssl \
   --winrm-ssl-verify-mode verify_none \

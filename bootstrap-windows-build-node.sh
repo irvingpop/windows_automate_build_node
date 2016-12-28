@@ -87,7 +87,9 @@ DOWNLOAD_URL=`mixlib-install download chefdk --url --platform=windows --platform
 knife bootstrap windows winrm \
   $WINDOWS_HOST \
   --node-name windows-build-node-1 \
+  --tags windows-build-node \
   --winrm-user $WINDOWS_USER \
   --winrm-password $WINDOWS_PASSWORD \
   --msi-url $DOWNLOAD_URL \
+  --bootstrap-template .chef/bootstrap-windows-chefdk-msi.erb \
   --run-list 'recipe[windows_automate_build_node::default]'
