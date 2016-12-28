@@ -9,7 +9,7 @@
 # NOTE2:  Due to a weird assumption in the UserData script, the password must be exactly 8 characters long and meet complexity requirements
 
 usage='
-bootstrap-windows-build-node.sh --username chef --password Cod3Can! --ssh-key mykey --subnet subnet-ff2f279b --security-group-id sg-be37dec6
+provision-aws-windows-build-node.sh --username chef --password Cod3Can! --ssh-key mykey --subnet subnet-ff2f279b --security-group-id sg-be37dec6
 '
 
 if [ $# -lt 5 ]; then
@@ -74,23 +74,22 @@ EOF
 eval "$(chef shell-init bash)"
 chef gem install knife-windows
 
-# Step 2, bootstrap the windows node
+# Step 2, create an automate data_bag_item if one doesn't exist (ala chef-services)
+DB_EXISTS=`knife data bag list automate |grep automate || /bin/true`
+
+if [ -z "${DB_EXISTS}" ]; then
+  # Need to use sudo to read the /etc/delivery/builder_key
+  # TODO: validate how well this will work if sudo asks you for a password
+  sudo /opt/chefdk/embedded/bin/ruby -e 'require "json"; b = {id: "automate", builder_pem: File.read("/etc/delivery/builder_key"), user_pem: File.read("/etc/delivery/delivery.pem") };  File.write("automate.json", JSON.pretty_generate(b))'
+  knife data bag from file automate automate.json
+fi
+
+# Step 3, bootstrap the windows node
 berks install
 berks upload -c .berkshelf_config.json
 
 # Perform a validatorless bootstrap and install ChefDK all in one pass
 DOWNLOAD_URL=`mixlib-install download chefdk --url --platform=windows --platform-version=2008r2 --architecture x86_64 |grep packages.chef.io`
-# PJ_DOWNLOAD_URL=`mixlib-install download push-jobs-client --url --platform=windows --platform-version=2008r2 --architecture x86_64 |grep packages.chef.io`
-
-# TODO, figure out why we need to grab the push-jobs-client package when it is part of ChefDK, but the push-jobs cookbook can't grok that
-# cat > ~/wbn-json-attributes.json <<EOF
-# {
-#   "push_jobs": {
-#     "package_url": "${PJ_DOWNLOAD_URL}",
-#     "package_checksum": "3b979f8d362738c8ac126ace0e80122a4cbc53425d5f8cf9653cdd79eca16d62"
-#   }
-# }
-# EOF
 
 # Hack our own user-data file, because knife-ec2's lacks things that we need to revisit later:
 #  1. hangs forever if you have a password longer than 8 characters, at a y/n prompt
