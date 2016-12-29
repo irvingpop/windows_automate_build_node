@@ -9,7 +9,7 @@
 # NOTE2:  Due to a weird assumption in the UserData script, the password must be exactly 8 characters long and meet complexity requirements
 
 usage='
-provision-aws-windows-build-node.sh --username chef --password Cod3Can! --ssh-key mykey --subnet subnet-ff2f279b --security-group-id sg-be37dec6
+provision-aws-windows-build-node.sh --username chef --password Cod3Can! --ssh-key mykey --subnet subnet-ff2f279b --security-group-id sg-4a897632
 '
 
 if [ $# -lt 5 ]; then
@@ -71,25 +71,26 @@ knife[:aws_credential_file] = File.join(ENV['HOME'], "/.aws/credentials")
 knife[:region] = 'us-west-2'
 EOF
 
-eval "$(chef shell-init bash)"
+# eval "$(chef shell-init bash)"
 chef gem install knife-windows
+chef gem install knife-ec2
 
 # Step 2, create an automate data_bag_item if one doesn't exist (ala chef-services)
-DB_EXISTS=`knife data bag list automate |grep automate || /bin/true`
+DB_EXISTS=`chef exec knife data bag list automate |grep automate || /bin/true`
 
 if [ -z "${DB_EXISTS}" ]; then
   # Need to use sudo to read the /etc/delivery/builder_key
   # TODO: validate how well this will work if sudo asks you for a password
-  sudo /opt/chefdk/embedded/bin/ruby -e 'require "json"; b = {id: "automate", builder_pem: File.read("/etc/delivery/builder_key"), user_pem: File.read("/etc/delivery/delivery.pem") };  File.write("automate.json", JSON.pretty_generate(b))'
-  knife data bag from file automate automate.json
+  sudo chef exec ruby -e 'require "json"; b = {id: "automate", builder_pem: File.read("/etc/delivery/builder_key"), user_pem: File.read("/etc/delivery/delivery.pem") };  File.write("automate.json", JSON.pretty_generate(b))'
+  chef exec knife data bag from file automate automate.json
 fi
 
 # Step 3, bootstrap the windows node
-berks install
-berks upload -c .berkshelf_config.json
+chef exec berks install
+chef exec berks upload -c .berkshelf_config.json
 
 # Perform a validatorless bootstrap and install ChefDK all in one pass
-DOWNLOAD_URL=`mixlib-install download chefdk --url --platform=windows --platform-version=2008r2 --architecture x86_64 |grep packages.chef.io`
+DOWNLOAD_URL=`chef exec mixlib-install download chefdk --url --platform=windows --platform-version=2008r2 --architecture x86_64 |grep packages.chef.io`
 
 # Hack our own user-data file, because knife-ec2's lacks things that we need to revisit later:
 #  1. hangs forever if you have a password longer than 8 characters, at a y/n prompt
@@ -138,13 +139,12 @@ cat > windows-build-node-user-data.txt <<EOF
 </powershell>
 EOF
 
-knife ec2 server create \
+chef exec knife ec2 server create \
   -N windows-build-node-2 \
   -I ami-24e64944 \
   -f t2.medium \
   -x ".\\${WINDOWS_USER}" \
   -P ${WINDOWS_PASSWORD} \
-  --tags windows-build-node \
   --ssh-key ${SSH_KEY} \
   --winrm-transport ssl \
   --winrm-ssl-verify-mode verify_none \

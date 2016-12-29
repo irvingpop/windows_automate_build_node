@@ -62,3 +62,6 @@ execute 'knife ssl fetch' do
 end
 
 include_recipe 'windows_automate_build_node::install_push_jobs'
+
+# Tag this machine as a windows build node
+tag('windows-build-node')
