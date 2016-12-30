@@ -4,7 +4,7 @@ eval(IO.read('c:/chef/client.rb'))
 
 allow_unencrypted true
 whitelist({"chef-client"=>"chef-client -c c:/chef/client.rb",
-           /^delivery-cmd (.+)$/=>"c:/chef/workspace/delivery-cmd.bat '\\1'"})
+           /^delivery-cmd (.+)$/=>"c:/chef/workspace/bin/delivery-cmd.bat '\\1'"})
 
 # NOTE - if we settle on a daemon provider that captures and timestamps logs,
 #        set this to 'false' to avoid duplicated timestamps in the logs.

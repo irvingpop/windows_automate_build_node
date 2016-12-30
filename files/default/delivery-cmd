@@ -85,24 +85,37 @@ class Streamy
   end
 end
 
-def write_profile(workspace_root)
-  cli_env = {
-    'LC_ALL' => 'en_US.UTF-8',
-    'HOME' => workspace_root
-  }
-  cmd = Mixlib::ShellOut.new("/opt/chefdk/bin/chef shell-init sh > #{workspace_root}/.chef-profile", environment: cli_env)
-  cmd.run_command
-end
+# def write_profile(workspace_root)
+#   cli_env = {
+#     'LC_ALL' => 'en_US.UTF-8',
+#     'HOME' => workspace_root
+#   }
+#   cmd = Mixlib::ShellOut.new("/opt/chefdk/bin/chef shell-init sh > #{workspace_root}/.chef-profile", environment: cli_env)
+#   cmd.run_command
+# end
 
-workspace_root = "/var/opt/delivery/workspace"
-workspace_bin =  "/var/opt/delivery/workspace/bin"
+workspace_root = "c:/chef/workspace"
+workspace_bin =  "c:/chef/workspace/bin"
 
-Chef::Config.from_file(Chef::Config.platform_specific_path("/etc/chef/client.rb"))
+# Manual init of environment, because mixlib-shellout having trouble with it below
+ENV['GIT_SSH'] = File.join(workspace_bin, 'git_ssh')
+ENV['HOME'] = workspace_root
+ENV['TERM'] = 'screen-256color'
+ENV['LC_ALL'] = 'en_US.UTF-8'
+ENV['PATH'] = ['c:/opscode/chefdk/bin',
+           'c:/opscode/chefdk/embedded/bin',
+           'c:/opscode/chefdk/embedded/git/cmd',
+           'c:/opscode/chefdk/embedded/git/bin',
+           'c:/opscode/chefdk/embedded/git/usr/bin',
+           ENV['PATH']
+         ].join(File::PATH_SEPARATOR)
+
+Chef::Config.from_file(Chef::Config.platform_specific_path("c:/chef/client.rb"))
 client = Chef::Client.new
 client.run_ohai
 client.node_name
 
-write_profile(workspace_root)
+# write_profile(workspace_root)
 
 change_file = File.join(workspace_root, 'change.json')
 raw_json = Base64.decode64(ARGV[0])
@@ -115,6 +128,7 @@ job_data = Chef::JSONCompat.from_json(raw_json)
 builder_auth_headers = Delivery::JobHelpers.builder_auth_headers(job_data)
 
 rest = Chef::REST.new(job_data["delivery_api_url"])
+# require 'pry'; binding.pry
 path = File.join(job_data['enterprise'],
                  'orgs', job_data['organization'],
                  'projects', job_data['project'],
@@ -133,9 +147,17 @@ end
 https_proxy = Chef::Config[:https_proxy] || ENV['HTTPS_PROXY'] || ENV['https_proxy']
 http_proxy = Chef::Config[:http_proxy] || ENV['HTTP_PROXY'] || ENV['http_proxy']
 no_proxy = Chef::Config[:no_proxy] || ENV['NO_PROXY'] || ENV['no_proxy']
+# investigate: why is Chef::REST really not smart enough to determine the trusted_certs_dir on windows?
+Chef::Config[:trusted_certs_dir] = "c:/chef/trusted_certs"
 
 cli_env = {
-  'PATH' => ['/opt/chefdk/bin:/opt/chefdk/embedded/bin', ENV['PATH']].join(File::PATH_SEPARATOR),
+  'PATH' => ['c:/opscode/chefdk/bin',
+             'c:/opscode/chefdk/embedded/bin',
+             'c:/opscode/chefdk/embedded/git/cmd',
+             'c:/opscode/chefdk/embedded/git/bin',
+             'c:/opscode/chefdk/embedded/git/usr/bin',
+             ENV['PATH']
+           ].join(File::PATH_SEPARATOR),
   'LC_ALL' => 'en_US.UTF-8',
   'GIT_SSH' => File.join(workspace_bin, 'git_ssh'),
   'HOME' => workspace_root,
@@ -145,7 +167,9 @@ cli_env['https_proxy'] = https_proxy if https_proxy && !https_proxy.strip.empty?
 cli_env['http_proxy'] = http_proxy if http_proxy && !http_proxy.strip.empty?
 cli_env['no_proxy'] = no_proxy if no_proxy && !no_proxy.strip.empty?
 
-cmd = Mixlib::ShellOut.new(". #{workspace_root}/.chef-profile && #{command_line} --no-spinner", environment: cli_env)
+# cmd = Mixlib::ShellOut.new(". #{workspace_root}/.chef-profile && #{command_line} --no-spinner", environment: cli_env)
+# Investigate:  why passing :environment seems to have no effect on Windows
+cmd = Mixlib::ShellOut.new("#{command_line} --no-spinner")
 
 start_datetime = DateTime.now
 

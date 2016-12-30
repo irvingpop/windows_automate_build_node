@@ -61,7 +61,13 @@ execute 'knife ssl fetch' do
   action :run
 end
 
+# execute 'knife ssl fetch delivery' do
+#   command "knife ssl fetch -c #{workspace}/.chef/knife.rb -s "
+#   action :run
+# end
+
 include_recipe 'windows_automate_build_node::install_push_jobs'
 
-# Tag this machine as a windows build node
+# Tag this machine as a windows build node and a regular delivery-build-node
 tag('windows-build-node')
+tag('delivery-build-node')
