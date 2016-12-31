@@ -50,6 +50,9 @@ done
 # Step 1, configure a chef/knife client
 CHEF_SERVER=`grep chef_server /etc/delivery/delivery.rb  | awk '{print $3}'`
 CHEF_USERNAME=`grep chef_username /etc/delivery/delivery.rb  | awk '{print $3}'`
+CHEF_SERVER_FQDN=`echo ${CHEF_SERVER} | awk -F/ '{print $3}'`
+AUTOMATE_SERVER_FQDN=`grep delivery_fqdn /etc/delivery/delivery.rb | awk '{print $2}' | tr -d '""'`
+
 
 cat > .chef/knife.rb <<EOF
 node_name ${CHEF_USERNAME}
@@ -83,11 +86,24 @@ chef exec berks upload -c .berkshelf_config.json
 # Perform a validatorless bootstrap and install ChefDK all in one pass
 DOWNLOAD_URL=`chef exec mixlib-install download chefdk --url --platform=windows --platform-version=2008r2 --architecture x86_64 |grep packages.chef.io`
 
+# To deliver the chef server and automate fqdn's in a fashion also compatible with chef-services
+cat > ~/wbn-json-attributes.json <<EOF
+{
+  "chef_automate": {
+    "fqdn": "${AUTOMATE_SERVER_FQDN}"
+  },
+  "chef_server": {
+    "fqdn": "${CHEF_SERVER_FQDN}"
+  }
+}
+EOF
+
 chef exec knife bootstrap windows winrm \
   $WINDOWS_HOST \
   --node-name windows-build-node-1 \
   --winrm-user $WINDOWS_USER \
   --winrm-password $WINDOWS_PASSWORD \
   --msi-url $DOWNLOAD_URL \
+  --run-list 'recipe[windows_automate_build_node::default]' \
   --bootstrap-template .chef/bootstrap-windows-chefdk-msi.erb \
-  --run-list 'recipe[windows_automate_build_node::default]'
+  --json-attribute-file ~/wbn-json-attributes.json

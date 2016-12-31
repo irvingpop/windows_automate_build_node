@@ -56,15 +56,25 @@ cookbook_file "#{workspace}/bin/delivery-cmd.bat" do
   user 'chef'
 end
 
+# Git on windows will automatically convert LF to CRLF, unless we override that setting
+cookbook_file "#{workspace}/.gitconfig" do
+  source 'gitconfig'
+end
+
 execute 'knife ssl fetch' do
   command "knife ssl fetch -c #{workspace}/.chef/knife.rb"
   action :run
 end
 
-# execute 'knife ssl fetch delivery' do
-#   command "knife ssl fetch -c #{workspace}/.chef/knife.rb -s "
-#   action :run
-# end
+execute 'knife ssl fetch automate for client' do
+  command "knife ssl fetch -c c:/chef/client.rb -s https://#{node['chef_automate']['fqdn']}"
+  action :run
+end
+
+execute 'knife ssl fetch automate for workspace' do
+  command "knife ssl fetch -c #{workspace}/.chef/knife.rb -s https://#{node['chef_automate']['fqdn']}"
+  action :run
+end
 
 include_recipe 'windows_automate_build_node::install_push_jobs'
 
