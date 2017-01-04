@@ -76,6 +76,9 @@ execute 'knife ssl fetch automate for workspace' do
   action :run
 end
 
+# Temporary
+include_recipe 'windows_automate_build_node::monkeypatch'
+
 include_recipe 'windows_automate_build_node::install_push_jobs'
 
 # Tag this machine as a windows build node and a regular delivery-build-node
