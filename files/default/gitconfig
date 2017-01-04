@@ -1,2 +1,5 @@
+[user]
+	name = Delivery Builder
+	email = builder@chef.io
 [core]
   autocrlf = false
