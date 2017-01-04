@@ -6,4 +6,4 @@ end
 
 cookbook_file ' C:\opscode\chefdk\embedded\lib\ruby\gems\2.3.0\gems\chef-12.17.44-universal-mingw32\lib\chef\chef_fs\file_system\repository\nodes_dir.rb' do
   source 'nodes_dir.rb'
-en
+end
