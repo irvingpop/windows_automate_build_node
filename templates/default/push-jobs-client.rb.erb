@@ -2,7 +2,8 @@
 
 eval(IO.read('c:/chef/client.rb'))
 
-allow_unencrypted true
+# Only needed for PJ server 1.x
+# allow_unencrypted true
 whitelist({"chef-client"=>"chef-client -c c:/chef/client.rb",
            /^delivery-cmd (.+)$/=>"c:/chef/workspace/bin/delivery-cmd.bat '\\1'"})
 

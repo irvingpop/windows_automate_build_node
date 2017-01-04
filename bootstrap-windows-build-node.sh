@@ -71,6 +71,7 @@ if [ -z "${DB_EXISTS}" ]; then
   # Need to use sudo to read the /etc/delivery/builder_key
   # TODO: validate how well this will work if sudo asks you for a password
   sudo chef exec ruby -e 'require "json"; b = {id: "automate", builder_pem: File.read("/etc/delivery/builder_key"), user_pem: File.read("/etc/delivery/delivery.pem") };  File.write("automate.json", JSON.pretty_generate(b))'
+  chef exec knife data bag create automate
   chef exec knife data bag from file automate automate.json
 fi
 
