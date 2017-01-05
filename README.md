@@ -16,16 +16,54 @@ Two bash scripts are provided, but it's recommended that you treat them as a ref
 
 This cookbook attempts to be totally unopinionated about how you've built your Automate server, but has been mostly tested using the [deltron](https://github.com/echohack/deltron) project
 
+Set up your projects as normal, but any projects that depend on Windows build nodes will need to use Windows and v1/Push build nodes for all pipeline stages, with a config.json:
+
+```json
+{
+  "version": "2",
+  "build_cookbook": {
+    "name": "build_cookbook",
+    "path": ".delivery/build_cookbook"
+  },
+  "skip_phases": [
+    "functional",
+    "quality",
+    "security",
+    "smoke"
+  ],
+  "build_nodes": {
+    "default": [ "tags:windows-build-node" ]
+  },
+  "dependencies": [],
+  "delivery-truck": {
+    "lint": {
+      "enable_cookstyle": true
+    },
+    "publish": {
+      "chef_server": true
+    }
+  }
+}
+```
+
 ## Prerequisites
 
 * Chef Server must have Push Jobs Server 2.1.1 or newer installed, and TCP ports 10000-10003 available
-* Automate server must have ChefDK installed
-* If using AWS Opsworks:
-  1. modify the `delivery["chef_server"]` line to use the `https://delivery_fqdn` hostname instead of `https://localhost:8443`, or else modify the shell scripts to read `CHEF_SERVER` from the `/etc/opscode/chef-server.rb`
-  2. Add the `pivotal` user to the `default` org:  `chef-server-ctl org-user-add default pivotal --admin`
+* Automate server must have ChefDK installed: `curl https://omnitruck.chef.io/install.sh | sudo bash -s -- -P chefdk`
+* Automate server must have TCP port 8989 (Git) open
 * The user running the scripts (on the Automate server) must have:
   * a valid `~/.aws/credentials` file that can launch instances
   * access to the /etc/delivery/delivery.rb & /etc/delivery/delivery.pem files
+* If using AWS Opsworks:
+  1. In `/etc/delivery/delivery.rb`, modify the `delivery["chef_server"]` line to use the `https://delivery_fqdn` hostname instead of `https://localhost:8443`, or else modify the shell scripts to read `CHEF_SERVER` from the `/etc/opscode/chef-server.rb`
+  2. Add the `pivotal` user to the `default` org:  `chef-server-ctl org-user-add default pivotal --admin`
+  3. Ensure that the delivery process can read the right keys to execute push jobs:
+  ```bash
+  delivery-ctl stop delivery
+  chgrp -R delivery /etc/delivery
+  chmod g+r /etc/delivery/builder_key /etc/delivery/*.pem
+  delivery-ctl start delivery
+  ```
 
 ## Additional AWS usage notes
 
@@ -73,15 +111,28 @@ chef exec knife job start "chef-client" --search "tags:windows-build-node" --quo
 
 # Known Issues
 
+## Windows 2012R2 MAX_PATH
+
+Windows 2012R2 and earlier all have a maximum path length of 260 characters (Google: `MAX_PATH`).  Ruby programs that attempt to access a file who's path exceeds MAX_PATH will error or crash, which can easily happen in the Delivery workspace.
+
+Workarounds:
+* Use very short hostnames for your Chef and Automate servers, also use very short names for your projects (note: this is a terrible workaround)
+* Use Windows 2016, which finally has the ability to lift this restriction:
+  - https://mspoweruser.com/ntfs-260-character-windows-10/
+  - https://www.saotn.org/ntfs-long-paths-windows-server-2016-gpo/
+
 ## ChefDK 1.1.6
 
 * All pipeline stages fail when run via push jobs. Issue fixed in Chef master, but hasn't shipped yet: https://github.com/chef/chef/pull/5693
-  * NOTE: This cookbook automatically patches a ChefDK installation (see recipes/monkeypatch.rb) but that should be cleaned up when the next release of ChefDK ships, or switch to ChefDk from the current channel
+  * NOTE: This cookbook automatically patches a ChefDK 1.1.6 installation (see recipes/monkeypatch.rb) but that should be cleaned up when the next release of ChefDK ships, or switch to ChefDk from the current channel
 * Push jobs needs updating to 2.1.4 to resolve an issue where jobs can hang if stdout or stderr exceed a certain size: https://github.com/chef/opscode-pushy-client/pull/111
 
 ## delivery-truck
 
-* Workspace path needs to be set in `attributes/default.rb`
+* Deploy jobs fail because of improper consumption of workspace_path, pending PR merge to delivery-truck: https://github.com/chef-cookbooks/delivery-truck/pull/32
 
+Workaround: Add the following to your `.delivery/build_cookbook/Berksfile`:
 
-* Deploy jobs fail because of improper consumption of workspace_path,  PR pending merge
+```
+cookbook 'delivery-truck', git: 'https://github.com/chef-cookbooks/delivery-truck', branch: 'irving/fix_deploy_helper_search'
+```
