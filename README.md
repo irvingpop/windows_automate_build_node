@@ -14,7 +14,7 @@ Two bash scripts are provided, but it's recommended that you treat them as a ref
 * `provision-aws-windows-build-node.sh`: Launches a new Windows server in AWS (via `knife-ec2`), bootstraps it with ChefDK and this cookbook in the run_list
  * NOTE: you must install a valid `.aws/credentials` file to use this
 
-This cookbook attempts to be totally unopinionated about how you've built your Automate server, but has been mostly tested using the [deltron](https://github.com/echohack/deltron) project
+This cookbook attempts to be totally unopinionated about how you've built your Automate server, but has been mostly tested using the [deltron](https://github.com/echohack/deltron) project and [AWS OpsWorks for Chef Automate](https://aws.amazon.com/opsworks/chefautomate/)
 
 Set up your projects as normal, but any projects that depend on Windows build nodes will need to use Windows and v1/Push build nodes for all pipeline stages, with a config.json:
 
