@@ -72,7 +72,7 @@ Launching a Windows 2012R2 instance in AWS using the `aws` CLI tools (and the `w
 ```bash
 aws ec2 run-instances \
   --count 1 \
-  --image-id ami-24e64944 \
+  --image-id ami-6e833e0e \
   --instance-type t2.medium \
   --key-name irving@getchef.com \
   --subnet-id subnet-ff2f279b \
@@ -121,11 +121,10 @@ Workarounds:
   - https://mspoweruser.com/ntfs-260-character-windows-10/
   - https://www.saotn.org/ntfs-long-paths-windows-server-2016-gpo/
 
-## ChefDK 1.1.6
+## ChefDK 1.2.x
 
-* All pipeline stages fail when run via push jobs. Issue fixed in Chef master, but hasn't shipped yet: https://github.com/chef/chef/pull/5693
-  * NOTE: This cookbook automatically patches a ChefDK 1.1.6 installation (see recipes/monkeypatch.rb) but that should be cleaned up when the next release of ChefDK ships, or switch to ChefDk from the current channel
 * Push jobs needs updating to 2.1.4 to resolve an issue where jobs can hang if stdout or stderr exceed a certain size: https://github.com/chef/opscode-pushy-client/pull/111
+  - appears to be locked here: https://github.com/chef/chef-dk/blob/master/Gemfile.lock#L91
 
 ## delivery-truck
 

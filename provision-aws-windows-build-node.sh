@@ -155,7 +155,7 @@ cat > ~/wbn-json-attributes.json <<EOF
 EOF
 
 chef exec knife ec2 server create \
-  -I ami-24e64944 \
+  -I ami-6e833e0e \
   -f t2.medium \
   -x ".\\${WINDOWS_USER}" \
   -P ${WINDOWS_PASSWORD} \
