@@ -81,3 +81,7 @@ include_recipe 'windows_automate_build_node::install_push_jobs'
 # Tag this machine as a windows build node and a regular delivery-build-node
 tag('windows-build-node')
 tag('delivery-build-node')
+
+if node['platform_version'].to_i >= 10
+  include_recipe 'windows_automate_build_node::win2016_maxpath'
+end

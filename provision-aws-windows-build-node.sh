@@ -160,6 +160,7 @@ chef exec knife ec2 server create \
   -x ".\\${WINDOWS_USER}" \
   -P ${WINDOWS_PASSWORD} \
   --ssh-key ${SSH_KEY} \
+  --tags X-Contact=${SSH_KEY} \
   --winrm-transport ssl \
   --winrm-ssl-verify-mode verify_none \
   --subnet ${SUBNET} \
